@@ -1,184 +1,137 @@
 import React, { useEffect, useState } from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { useNavigate } from "react-router-dom";
+import { addRentalRecord, fetchbike, fetchRentalRecord, getBikeById, getCities, getCityById, getUsers } from "../../services";
 
 const Home = () => {
+    const navigate = useNavigate();
     const [record, setRecord] = useState([]);
     const [bikeHistory, setBikeHistory] = useState(true);
     const [rent, setRent] = useState(false);
     const [selectedBike, setSelectedBike] = useState(null);
+    const [selectedCity, setSelectedCity] = useState("");
+    const [filteredBikes, setFilteredBikes] = useState([]);
+    const [bikes, setBikes] = useState([]);
+    const [pickupDate, setPickupDate] = useState("");
+    const [pickupTime, setPickupTime] = useState("");
+    const [dropoffDate, setDropoffDate] = useState("");
+    const [dropoffTime, setDropoffTime] = useState("");
+    const [bookingDetails, setBookingDetails] = useState(null);
+    const [ride, setRide] = useState(false);
+    const [cityid, setCityId] = useState('');
+    const [rentalRecord, setRentalRecord] = useState([]);
+    const [pickUpCity,setPickupCity]=useState('')
+    const [dropCity,setDropCity]=useState('')
+    const [rentedBike,setRentedBike]=useState('')
 
-    const bikes = [
-        {
-            "bikename": "Honda CBR",
-            "bikenumber": "MH12AB1234",
-            "bikedescription": "A sporty bike with great performance.",
-            "perdayrent": "1000",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "Yamaha R15",
-            "bikenumber": "MH12CD5678",
-            "bikedescription": "A stylish and efficient bike.",
-            "perdayrent": "1200",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "Royal Enfield",
-            "bikenumber": "MH12EF9101",
-            "bikedescription": "A classic bike with a powerful engine.",
-            "perdayrent": "1500",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "KTM Duke",
-            "bikenumber": "MH12GH2345",
-            "bikedescription": "A bike with a rugged look and feel.",
-            "perdayrent": "1300",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "Bajaj Pulsar",
-            "bikenumber": "MH12IJ6789",
-            "bikedescription": "A reliable and efficient bike.",
-            "perdayrent": "900",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "Suzuki Gixxer",
-            "bikenumber": "MH12KL3456",
-            "bikedescription": "A bike with great handling and performance.",
-            "perdayrent": "1100",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "TVS Apache",
-            "bikenumber": "MH12MN7890",
-            "bikedescription": "A sporty bike with advanced features.",
-            "perdayrent": "1000",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "Hero Splendor",
-            "bikenumber": "MH12OP1234",
-            "bikedescription": "A reliable bike with good mileage.",
-            "perdayrent": "800",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "Kawasaki Ninja",
-            "bikenumber": "MH12QR5678",
-            "bikedescription": "A high-performance bike with a sleek design.",
-            "perdayrent": "1600",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "Harley Davidson",
-            "bikenumber": "MH12ST9101",
-            "bikedescription": "A premium bike with exceptional performance.",
-            "perdayrent": "2000",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+    const cities = ["Ahmedabad", "Mumbai", "Chennai", "Delhi", "Vadodara", "Pune", "Bangalore", "Chandigarh", "Surat", "Nashik"];
+
+    const getBikes = async () => {
+        const res = await fetchbike();
+        console.log("Bike details:", res.data);
+        setBikes(res.data);
+    };
+
+    const handleRide = () => {
+        setRide(true);
+        setRent(false);
+        setBikeHistory(false);
+        setBookingDetails(false)
+        getRentalRecord();
+    };
+
+    const handleBook = async (bikeId) => {
+        const total_users = await getUsers();
+        const curremt_email = localStorage.getItem("email_id");
+        const today = new Date();
+        const formattedDate = today.toISOString().split('T')[0];
+        const user_id = total_users.data.filter(user => user.emailId === curremt_email);
+        console.log("User details:", user_id);
+        
+        // find city id
+        const city_id = await getCities();
+        console.log("Database ni city",city_id,selectedCity);
+        
+        console.log("total cities", city_id.data);
+        // city_id.data.filter((city) => {
+        //     if (city.cityName === selectedCity) {
+        //         console.log("city id", city.cityId);
+        //         setCityId(city.cityId);
+        //         console.log("state city", cityid);
+        //     }
+        // });
+        const db_city=city_id.data.filter((city)=>city.cityName===selectedCity)
+        console.log("db filter city",db_city);
+        
+        setCityId(db_city[0].cityId)
+        const rental_record = {
+            "bikeId": bikeId,
+            "userId": user_id[0].userId,
+            "bookingDate": formattedDate,
+            "pickupCityId": db_city[0].cityId,
+            "dropOffCityId": db_city[0].cityId,
+            "rentalStartDate": pickupDate,
+            "rentalEndDate": dropoffDate,
+            "extraHelmet": 0
+        };
+
+        console.log("Rental records", rental_record);
+        const res = await addRentalRecord(rental_record);
+    };
+
+    const getRentalRecord = async () => {
+        const current_user=await getUsers()
+        console.log("Badha users",current_user.data);
+        
+        const useremail=localStorage.getItem("email_id")
+        console.log("localstorage email",useremail);
+        
+        const userid=current_user.data.filter((user)=>user.emailId===useremail)
+        console.log("loop ni baar",userid[0].userId);
+        
+        const res = await fetchRentalRecord(userid[0].userId);
+        console.log("Rental records:", res.data);
+        for (let i=0;i<res.data.length;i++){
+            
+                console.log("res.data[i].dropOffCityId",res.data[i].dropOffCityId);
+                
+                const cityName=await getCityById(res.data[i].dropOffCityId)
+                const bikeName=await getBikeById(res.data[i].bikeId)
+                console.log("City Name:",cityName);
+                console.log("Bike Name",bikeName);
+                
+                
+                res.data[i].bikeName=bikeName.data.bikeName
+                res.data[i].pickupCityName=cityName.data.cityName
+                res.data[i].dropoffCityName=cityName.data.cityName
+            
         }
-    ];
+        setRecord(res.data)
+    };
 
     useEffect(() => {
-        const rentalRecord = [
-            {
-                "bikeName": "Yamaha FZ",
-                "pickupCityName": "New York",
-                "dropCityName": "Los Angeles",
-                "rentalStartDate": "2024-08-01",
-                "rentalEndDate": "2024-08-10",
-                "bookingDate": "2024-07-25",
-                "status": "Confirmed"
-            },
-            {
-                "bikeName": "Honda CBR",
-                "pickupCityName": "Chicago",
-                "dropCityName": "Houston",
-                "rentalStartDate": "2024-08-05",
-                "rentalEndDate": "2024-08-15",
-                "bookingDate": "2024-07-27",
-                "status": "Pending"
-            },
-            {
-                "bikeName": "Suzuki Gixxer",
-                "pickupCityName": "San Francisco",
-                "dropCityName": "Seattle",
-                "rentalStartDate": "2024-08-10",
-                "rentalEndDate": "2024-08-20",
-                "bookingDate": "2024-07-29",
-                "status": "Confirmed"
-            },
-            {
-                "bikeName": "Kawasaki Ninja",
-                "pickupCityName": "Miami",
-                "dropCityName": "Orlando",
-                "rentalStartDate": "2024-08-15",
-                "rentalEndDate": "2024-08-25",
-                "bookingDate": "2024-07-30",
-                "status": "Cancelled"
-            },
-            {
-                "bikeName": "Ducati Monster",
-                "pickupCityName": "Dallas",
-                "dropCityName": "Austin",
-                "rentalStartDate": "2024-08-20",
-                "rentalEndDate": "2024-08-30",
-                "bookingDate": "2024-08-01",
-                "status": "Confirmed"
-            },
-            {
-                "bikeName": "Harley Davidson",
-                "pickupCityName": "Las Vegas",
-                "dropCityName": "Phoenix",
-                "rentalStartDate": "2024-08-25",
-                "rentalEndDate": "2024-09-04",
-                "bookingDate": "2024-08-02",
-                "status": "Pending"
-            },
-            {
-                "bikeName": "BMW S1000RR",
-                "pickupCityName": "Boston",
-                "dropCityName": "Philadelphia",
-                "rentalStartDate": "2024-08-30",
-                "rentalEndDate": "2024-09-09",
-                "bookingDate": "2024-08-03",
-                "status": "Confirmed"
-            },
-            {
-                "bikeName": "Triumph Street Triple",
-                "pickupCityName": "San Diego",
-                "dropCityName": "San Jose",
-                "rentalStartDate": "2024-09-01",
-                "rentalEndDate": "2024-09-11",
-                "bookingDate": "2024-08-04",
-                "status": "Confirmed"
-            },
-            {
-                "bikeName": "KTM Duke",
-                "pickupCityName": "Denver",
-                "dropCityName": "Salt Lake City",
-                "rentalStartDate": "2024-09-05",
-                "rentalEndDate": "2024-09-15",
-                "bookingDate": "2024-08-05",
-                "status": "Pending"
-            },
-            {
-                "bikeName": "Royal Enfield",
-                "pickupCityName": "Atlanta",
-                "dropCityName": "Charlotte",
-                "rentalStartDate": "2024-09-10",
-                "rentalEndDate": "2024-09-20",
-                "bookingDate": "2024-08-06",
-                "status": "Confirmed"
-            }
-        ]
-        setRecord(rentalRecord);
+        getBikes();
+        
     }, []);
+
+    useEffect(() => {
+        if (selectedCity) {
+            const filtered = bikes.filter(bike => bike.city === selectedCity);
+            setFilteredBikes(filtered);
+        } else {
+            setFilteredBikes([]);
+        }
+    }, [selectedCity, bikes]);
 
     const handleRentBike = () => {
         setRent(true);
         setBikeHistory(false);
+        setRide(false);
+    };
+
+    const handleCityChange = (e) => {
+        setSelectedCity(e.target.value);
+        localStorage.setItem("current_city", e.target.value);
     };
 
     const openModal = (bike) => {
@@ -190,8 +143,23 @@ const Home = () => {
     };
 
     const confirmBooking = () => {
-        alert("Booking successful!");
+        const bookingDetail = {
+            bike: selectedBike,
+            pickupDate,
+            pickupTime,
+            dropoffDate,
+            dropoffTime
+        };
+        console.log("bookingDetail",bookingDetail);
+        
+        setBookingDetails(bookingDetail);
         closeModal();
+    };
+
+    const handleLogout = async () => {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('token');
+        navigate('/');
     };
 
     return (
@@ -199,66 +167,56 @@ const Home = () => {
             <div className="container text-dark">
                 <div className="row">
                     <div className="col-md-12">
-                        <button className="btn btn-warning mt-5 mb-5" onClick={handleRentBike}>Rent a bike</button>
+                        <div className="row">
+                            <div className="col-md-3">
+                                <button className="btn btn-warning mt-5 mb-5" onClick={handleRentBike}>Rent a bike</button>
+                            </div>
+                            <div className="col-md-3">
+                                <button className="btn btn-primary mt-5 mb-5" disabled>Current City: {localStorage.getItem("current_city")}</button>
+                            </div>
+                            <div className="col-md-3">
+                                <button className="btn btn-success mt-5 mb-5" onClick={handleRide}>My Ride</button>
+                            </div>
+                            <div className="col-md-3">
+                                <button className="btn btn-danger mt-5 mb-5" onClick={handleLogout}>Logout</button>
+                            </div>
+                        </div>
                     </div>
                     {bikeHistory && (
                         <div className="col-md-12">
                             <h3>Bike Rent History</h3>
-                            <table className="table">
-                                <thead>
-                                    <tr>
-                                        <th>Bike Name</th>
-                                        <th>Pickup City Name</th>
-                                        <th>Drop City Name</th>
-                                        <th>Rental Start Date</th>
-                                        <th>Rental End Date</th>
-                                        <th>Booking Date</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {record.map((data, index) => (
-                                        <tr key={index}>
-                                            <td>{data.bikeName}</td>
-                                            <td>{data.pickupCityName}</td>
-                                            <td>{data.dropCityName}</td>
-                                            <td>{data.rentalStartDate}</td>
-                                            <td>{data.rentalEndDate}</td>
-                                            <td>{data.bookingDate}</td>
-                                            <td>{data.status}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                            {/* Your existing Bike Rent History table code */}
                         </div>
                     )}
                     {rent && (
                         <>
                             <div className="col-md-12">
-                                <table className="table">
-                                    <thead>
-                                        <tr>
-                                            <th>Bike Name</th>
-                                            <th>Bike Number</th>
-                                            <th>Bike Description</th>
-                                            <th>Per Day Rent</th>
-                                            <th>Bike Image</th>
-                                            <th>Rent Bike</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {bikes.map((data, index) => (
-                                            <tr key={index}>
-                                                <td>{data.bikename}</td>
-                                                <td>{data.bikenumber}</td>
-                                                <td>{data.bikedescription}</td>
-                                                <td>{data.perdayrent}</td>
-                                                <td><img src={data.bikephoto} alt={data.bikename} style={{ width: '100px', height: 'auto' }} /></td>
-                                                <td><button className="btn btn-primary" onClick={() => openModal(data)}>Book Now</button></td>
-                                            </tr>
+                                <div className="form-group">
+                                    <label htmlFor="selectCity">Select City:</label>
+                                    <select className="form-control" id="selectCity" onChange={handleCityChange} value={selectedCity}>
+                                        <option value="">Select City</option>
+                                        {cities.map((city, index) => (
+                                            <option key={index} value={city}>{city}</option>
                                         ))}
-                                    </tbody>
-                                </table>
+                                    </select>
+                                </div>
+                                {selectedCity && (
+                                    <div className="row mt-4">
+                                        {filteredBikes.map((data, index) => (
+                                            <div key={index} className="col-md-6">
+                                                <div className="card mb-4">
+                                                    <img src={data.bikePhoto} className="card-img-top" alt={data.bikeName} style={{ height: '200px', objectFit: 'cover' }} />
+                                                    <div className="card-body">
+                                                        <h5 className="card-title">{data.bikeName}</h5>
+                                                        <p className="card-text">{data.bikeDescription}</p>
+                                                        <p className="card-text"><strong>Per Day Rent:</strong> ₹{data.perDayRental}</p>
+                                                        <button className="btn btn-primary" onClick={() => openModal(data)}>Book Now</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </>
                     )}
@@ -270,26 +228,83 @@ const Home = () => {
                     <div className="modal-dialog">
                         <div className="modal-content">
                             <div className="modal-header">
-                                <h5 className="modal-title">Bike Details</h5>
+                                <h5 className="modal-title">Search your next ride</h5>
                                 <button type="button" className="btn-close" aria-label="Close" onClick={closeModal}></button>
                             </div>
                             <div className="modal-body">
-                                <p><strong>Bike Name:</strong> {selectedBike.bikename}</p>
-                                <p><strong>Bike Number:</strong> {selectedBike.bikenumber}</p>
-                                <p><strong>Description:</strong> {selectedBike.bikedescription}</p>
-                                <p><strong>Per Day Rent:</strong> {selectedBike.perdayrent}</p>
-                                <img src={selectedBike.bikephoto} alt={selectedBike.bikename} style={{ width: '100%', height: 'auto' }} />
-                            </div>
-                            <div className="modal-footer">
-                                <button type="button" className="btn btn-secondary" onClick={closeModal}>Close</button>
-                                <button type="button" className="btn btn-primary" onClick={confirmBooking}>Confirm Booking</button>
+                                <form>
+                                    <div className="mb-3">
+                                        <label htmlFor="pickupDate" className="form-label">Pickup Date</label>
+                                        <input type="date" className="form-control" id="pickupDate" value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label htmlFor="pickupTime" className="form-label">Pickup Time</label>
+                                        <input type="time" className="form-control" id="pickupTime" value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label htmlFor="dropoffDate" className="form-label">Dropoff Date</label>
+                                        <input type="date" className="form-control" id="dropoffDate" value={dropoffDate} onChange={(e) => setDropoffDate(e.target.value)} />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label htmlFor="dropoffTime" className="form-label">Dropoff Time</label>
+                                        <input type="time" className="form-control" id="dropoffTime" value={dropoffTime} onChange={(e) => setDropoffTime(e.target.value)} />
+                                    </div>
+                                    <button type="button" className="btn btn-primary" onClick={confirmBooking}>Confirm Booking</button>
+                                </form>
                             </div>
                         </div>
                     </div>
                 </div>
             )}
+
+            {ride && (
+                <div className="container">
+                    <h3>Your Rides</h3>
+                    {record.length > 0 ? (
+                        <table className="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Bike Name</th>
+                                    <th>Pickup City</th>
+                                    <th>Dropoff City</th>
+                                    <th>Pickup Date</th>
+                                    <th>Dropoff Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {record.map((rec, index) => (
+                                    <tr key={index}>
+                                        <td>{rec.bikeName}</td>
+                                        <td>{rec.pickupCityName}</td>
+                                        <td>{rec.dropoffCityName}</td>
+                                        <td>{rec.rentalStartDate}</td>
+                                        <td>{rec.rentalEndDate}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <p>No rides found.</p>
+                    )}
+                </div>
+            )}
+            {bookingDetails && 
+                <div className="container mt-5">
+                    <div className="card">
+                        <div className="card-body">
+                            <h5 className="card-title">{bookingDetails.bike.bikeName}</h5>
+                            <p className="card-text"><strong>Pickup:</strong> {bookingDetails.pickupDate} {bookingDetails.pickupTime}</p>
+                            <p className="card-text"><strong>Dropoff:</strong> {bookingDetails.dropoffDate} {bookingDetails.dropoffTime}</p>
+                            <p className="card-text"><strong>Location:</strong> {selectedCity}</p>
+                            <p className="card-text"><strong>Per Day Rent:</strong> ₹{bookingDetails.bike.perDayRental}</p>
+                            <img src={bookingDetails.bike.bikePhoto} alt={bookingDetails.bike.bikeName} style={{ width: '100%', height: 'auto' }} />
+                            <button className="btn btn-primary mt-3" id={bookingDetails.bike.bikeId} onClick={(e)=>{handleBook(e.target.id)}}>Book</button>
+                        </div>
+                    </div>
+                    </div>
+                    }
         </>
     );
-}
+};
 
 export default Home;

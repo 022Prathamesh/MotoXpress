@@ -8,17 +8,23 @@ import Login from './components/login/login';
 import Registration from './components/registration/registration';
 import Dashboard from './components/dashboard/dashboard';
 import Admin from './components/admndashboard/admin';
+import { useState } from 'react';
 
 function App() {
+  const [reloadHeader, setReloadHeader] = useState(false);
+
+const triggerHeaderReload = () => {
+  setReloadHeader(!reloadHeader); // Toggle the state to force a re-render
+};
   return (
     <div className="App">
     <Router>
       <header>
-        <Header />
+        <Header key={reloadHeader}/>
       </header>
       <section>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" triggerHeaderReload={triggerHeaderReload}  element={<Dashboard />} />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Home />} />
           <Route path="/registration" element={<Registration />} />

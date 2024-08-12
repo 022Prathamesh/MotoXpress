@@ -1,78 +1,83 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { deleteBike, fetchbike, getBikeById, updateBikeDetails } from "../../services";
 
 const BikeDetails = () => {
-    const record = [
-        {
-            "bikename": "Honda CBR",
-            "bikenumber": "MH12AB1234",
-            "bikedescription": "A sporty bike with great performance.",
-            "perdayrent": "1000",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "Yamaha R15",
-            "bikenumber": "MH12CD5678",
-            "bikedescription": "A stylish and efficient bike.",
-            "perdayrent": "1200",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "Royal Enfield",
-            "bikenumber": "MH12EF9101",
-            "bikedescription": "A classic bike with a powerful engine.",
-            "perdayrent": "1500",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "KTM Duke",
-            "bikenumber": "MH12GH2345",
-            "bikedescription": "A bike with a rugged look and feel.",
-            "perdayrent": "1300",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "Bajaj Pulsar",
-            "bikenumber": "MH12IJ6789",
-            "bikedescription": "A reliable and efficient bike.",
-            "perdayrent": "900",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "Suzuki Gixxer",
-            "bikenumber": "MH12KL3456",
-            "bikedescription": "A bike with great handling and performance.",
-            "perdayrent": "1100",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "TVS Apache",
-            "bikenumber": "MH12MN7890",
-            "bikedescription": "A sporty bike with advanced features.",
-            "perdayrent": "1000",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "Hero Splendor",
-            "bikenumber": "MH12OP1234",
-            "bikedescription": "A reliable bike with good mileage.",
-            "perdayrent": "800",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "Kawasaki Ninja",
-            "bikenumber": "MH12QR5678",
-            "bikedescription": "A high-performance bike with a sleek design.",
-            "perdayrent": "1600",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-        },
-        {
-            "bikename": "Harley Davidson",
-            "bikenumber": "MH12ST9101",
-            "bikedescription": "A premium bike with exceptional performance.",
-            "perdayrent": "2000",
-            "bikephoto": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+    const [record, setRecord] = useState([]);
+    const [showEdit, setShowEdit] = useState(false);
+    const [bikeId, setBikeId] = useState(null);
+    const [bikename, setBikename] = useState('');
+    const [bikenumber, setBikenumber] = useState('');
+    const [bikedescription, setBikedescription] = useState('');
+    const [perdayrent, setPerDayRent] = useState('');
+    const [bikephoto, setBikePhoto] = useState(null);
+   
+
+    const fetchBike = async () => {
+        const res = await fetchbike();
+        console.log("bike detail", res.data);
+        setRecord(res.data);
+    };
+
+    const handleUpdate = async (id) => {
+        console.log("update id", id);
+        setShowEdit(true);
+        setBikeId(id);
+        const res = await getBikeById(id);
+        console.log("Bike By Id", res.data);
+
+        // Populate form with existing data
+        setBikename(res.data.bikeName);
+        setBikenumber(res.data.bikeNumber);
+        setBikedescription(res.data.bikeDescription);
+        setPerDayRent(res.data.perDayRental);
+        setBikePhoto(res.data.bikePhoto); 
+
+    };
+
+    const handleDelete = async(id) => {
+        console.log("delete id", id);
+        const res=await deleteBike(id)
+        console.log("Delete bike",res);
+        fetchBike()
+        
+    };
+
+    const handleSubmit = async(event) => {
+        event.preventDefault();
+        const data={
+            "bikeName":bikename,
+            "bikeNumber":bikenumber,
+            "bikeDescription":bikedescription,
+            "perDayRental":perdayrent,
+            "bikePhoto":bikephoto
         }
-    ];
+        console.log("Updated Bike Details:",bikeId,data);
+        //updateBikeDetails
+        const res=await  updateBikeDetails(bikeId,data)
+        console.log("Update response",res);
+        setShowEdit(false)
+        fetchBike()
+
+        
+    };
+
+    const handleFileUpload = (e) => {
+        const file = e.target.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setBikePhoto(reader.result);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            alert('Please upload a valid image file');
+        }
+       
+    };
+
+    useEffect(() => {
+        fetchBike();
+    }, []);
 
     return (
         <>
@@ -92,24 +97,112 @@ const BikeDetails = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {
-                                    record.map((data, index) => {
-                                        return (
-                                            <tr key={index}>
-                                                <td>{data.bikename}</td>
-                                                <td>{data.bikenumber}</td>
-                                                <td>{data.bikedescription}</td>
-                                                <td>{data.perdayrent}</td>
-                                                <td><img src={data.bikephoto} alt={data.bikename} style={{ width: '100px', height: 'auto' }} /></td>
-                                                <td><button className="btn btn-primary">Update</button></td>
-                                                <td><button className="btn btn-danger">Delete</button></td>
-                                            </tr>
-                                        );
-                                    })
-                                }
+                                {record.map((data, index) => {
+                                    return (
+                                        <tr key={index}>
+                                            <td>{data.bikeName}</td>
+                                            <td>{data.bikeNumber}</td>
+                                            <td>{data.bikeDescription}</td>
+                                            <td>{data.perDayRental}</td>
+                                            <td>
+                                                <img
+                                                    src={data.bikePhoto}
+                                                    alt={data.bikeName}
+                                                    style={{ width: '100px', height: 'auto' }}
+                                                />
+                                            </td>
+                                            <td>
+                                                <button
+                                                    className="btn btn-primary"
+                                                    id={data.bikeId}
+                                                    onClick={(e) => handleUpdate(data.bikeId)}
+                                                >
+                                                    Update
+                                                </button>
+                                            </td>
+                                            <td>
+                                                <button
+                                                    className="btn btn-danger"
+                                                    id={data.bikeId}
+                                                    onClick={(e) => handleDelete(data.bikeId)}
+                                                >
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
+                    {showEdit && (
+                        <div className="col-md-12">
+                            <form className="form-group" onSubmit={handleSubmit}>
+                                <hr />
+                                <div className="row justify-content-center align-items-center">
+                                    <div className="col-md-4">
+                                        <label><b>Bike Name:</b></label>
+                                        <input
+                                            className="form-control"
+                                            type="text"
+                                            value={bikename}
+                                            onChange={(event) => setBikename(event.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="row justify-content-center align-items-center">
+                                    <div className="col-md-4">
+                                        <label><b>Bike Number:</b></label>
+                                        <input
+                                            className="form-control"
+                                            type="text"
+                                            value={bikenumber}
+                                            onChange={(event) => setBikenumber(event.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="row justify-content-center align-items-center">
+                                    <div className="col-md-4">
+                                        <label><b>Bike Description:</b></label>
+                                        <textarea
+                                            className="form-control"
+                                            value={bikedescription}
+                                            onChange={(event) => setBikedescription(event.target.value)}
+                                        ></textarea>
+                                    </div>
+                                </div>
+                                <div className="row justify-content-center align-items-center">
+                                    <div className="col-md-4">
+                                        <label><b>Per Day Rent:</b></label>
+                                        <input
+                                            className="form-control"
+                                            type="text"
+                                            value={perdayrent}
+                                            onChange={(event) => setPerDayRent(event.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="row justify-content-center align-items-center">
+                                    <div className="col-md-4">
+                                        <label><b>Bike Photo:</b></label>
+                                        <input
+                                            className="form-control"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleFileUpload}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="row justify-content-center align-items-center">
+                                    <div className="col-md-4">
+                                        <button className="btn btn-primary form-control mt-3" type="submit">
+                                            Update Bike
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    )}
                 </div>
             </div>
         </>

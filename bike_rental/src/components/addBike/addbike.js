@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { addbike } from "../../services";
 
 const AddBike = () => {
     const [bikename, setBikename] = useState('');
@@ -6,17 +7,24 @@ const AddBike = () => {
     const [bikedescription, setBikedescription] = useState('');
     const [perdayrent, setPerDayRent] = useState('');
     const [bikephoto, setBikePhoto] = useState('');
+    const [selectedCity, setSelectedCity] = useState('');
 
-    const handleSubmit = (e) => {
+    const cities = ["Ahmedabad", "Mumbai", "Chennai", "Delhi", "Vadodara", "Pune", "Bangalore", "Chandigarh", "Surat", "Nashik"];
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const data={
-            "bikename":bikename,
-            "bikenumber":bikenumber,
-            "bikedescription":bikedescription,
-            "perdayrent":perdayrent,
-            "bikephoto":bikephoto
-        }
+        const data = {
+            "bikeName": bikename,
+            "bikeNumber": bikenumber,
+            "bikeDescription": bikedescription,
+            "perDayRental": perdayrent,
+            "bikePhoto": bikephoto,
+            "city": selectedCity
+        };
+
         console.log("Bike details:", data);
+        const res = await addbike(data);
+        console.log("Res", res);
     };
 
     const handleFileUpload = (e) => {
@@ -91,6 +99,23 @@ const AddBike = () => {
                         />
                     </div>
                 </div>
+
+                <div className="row justify-content-center align-items-center mt-3">
+                    <div className="col-md-4">
+                        <label><b>Select City:</b></label>
+                        <select
+                            className="form-control"
+                            value={selectedCity}
+                            onChange={(event) => setSelectedCity(event.target.value)}
+                        >
+                            <option value="">Select City</option>
+                            {cities.map((city, index) => (
+                                <option key={index} value={city}>{city}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
                 <div className="row justify-content-center align-items-center">
                     <div className="col-md-4">
                         <button className="btn btn-primary form-control mt-3">

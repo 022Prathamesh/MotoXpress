@@ -1,18 +1,36 @@
 import React, { useState } from "react";
+import { login } from "../../services";
 
 const Login=()=>{
 
     const [username,setUsername]=useState('')
     const [password,setPassword]=useState('')
 
-    const handleSubmit=(e)=>{
+    const handleSubmit=async(e)=>{
         e.preventDefault()
         let data={
-            "username":username,
-            "password":password
+            "emailId":username,
+            "passwordHash":password
         }
         console.log("Bike rental log:",data);
-        
+
+        const res=await login(data)
+        console.log("login",res.data);
+        const token = res.data.token;
+
+
+
+        if (token) {
+            if(res.data.role==="customer"){
+                localStorage.setItem("email_id", username);
+                window.location.href = `/dashboard?token=${encodeURIComponent(token)}`;
+            }
+            else if(res.data.role==="admin"){
+                window.location.href = `/admin-dashboard?token=${encodeURIComponent(token)}`;
+            }
+        } else {
+            console.error("Token not found in response");
+        }
     }
 
     return(
@@ -26,7 +44,7 @@ const Login=()=>{
                             <label><b>Username:</b></label>
                             <input
                                 className="form-control"
-                                type="text"    
+                                type="email"    
                                 value={username}   
                                 onChange={(event)=>setUsername(event.target.value)}                        
                             />
